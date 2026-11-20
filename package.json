@@ -1,0 +1,17 @@
+{
+  "name": "gorilla-tag-iso",
+  "version": "1.0.0",
+  "description": "Jogo multiplayer 2D isométrico inspirado no Gorilla Tag",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT"
+}

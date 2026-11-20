@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gorilla Tag ISO</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Canvas do jogo -->
+  <canvas id="game"></canvas>
+
+  <!-- ================= MENUS ================= -->
+  <div id="menu-layer">
+
+    <!-- Menu Principal -->
+    <section id="screen-main" class="screen active">
+      <div class="panel center">
+        <h1 class="logo">🦍 Gorilla Tag <span>ISO</span></h1>
+        <p class="tagline">Multiplayer isométrico · Foge, salta e não te deixes apanhar</p>
+        <div class="btn-col">
+          <button class="btn primary" data-goto="screen-play">▶ Jogar</button>
+          <button class="btn" data-goto="screen-controls">🎮 Comandos</button>
+          <button class="btn" data-goto="screen-catalog">👕 Catálogo de Roupa e Cores</button>
+        </div>
+        <p class="status" id="conn-status"><span class="dot off"></span> A ligar ao servidor…</p>
+      </div>
+    </section>
+
+    <!-- Comandos -->
+    <section id="screen-controls" class="screen">
+      <div class="panel">
+        <h2>🎮 Comandos</h2>
+        <div class="controls-grid">
+          <div class="control-card">
+            <h3>Movimento e impulso</h3>
+            <ul>
+              <li><kbd>Rato</kbd> aponta a direção do impulso (seta no chão)</li>
+              <li><kbd>Clique esquerdo</kbd> impulsiona o gorila nessa direção (só no chão)</li>
+              <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> escolhem a direção (ou setas) e deslizam devagar</li>
+              <li><kbd>Espaço</kbd> salta/impulsiona na direção de WASD (ou do rato)</li>
+            </ul>
+          </div>
+          <div class="control-card">
+            <h3>Tocar / Apanhar</h3>
+            <ul>
+              <li>Aproxima-te de um alvo e carrega em <kbd>Clique</kbd>, <kbd>E</kbd> ou <kbd>Botão direito</kbd></li>
+              <li><b>Modo Normal:</b> toca no Bot Assassino para o atordoar durante 2,5 s</li>
+              <li><b>Modo Assassino:</b> se fores o Assassino, tocar elimina o fugitivo</li>
+              <li>Toque em ecrã tátil: toca no ecrã para apontar e impulsionar</li>
+            </ul>
+          </div>
+          <div class="control-card">
+            <h3>Dicas</h3>
+            <ul>
+              <li>Pedras e troncos podem ser escalados com um salto</li>
+              <li>Árvores bloqueiam sempre: usa-as para despistar</li>
+              <li>O minimapa (em baixo à esquerda) mostra onde está o perigo</li>
+              <li><kbd>Esc</kbd> abre o menu da partida</li>
+            </ul>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn" data-goto="screen-main">← Voltar</button></div>
+      </div>
+    </section>
+
+    <!-- Catálogo de Roupa e Cores -->
+    <section id="screen-catalog" class="screen">
+      <div class="panel wide">
+        <h2>👕 Catálogo de Roupa e Cores</h2>
+        <div class="catalog">
+          <div class="preview-box">
+            <canvas id="preview" width="280" height="320"></canvas>
+          </div>
+          <div class="catalog-options">
+            <h3>Cor do pelo</h3>
+            <div id="color-list" class="swatch-list"></div>
+            <h3>Chapéus e acessórios</h3>
+            <div id="hat-list" class="hat-list"></div>
+            <p class="hint-text">As tuas escolhas ficam visíveis para todos os jogadores da sala.</p>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn" data-goto="screen-main">← Voltar</button></div>
+      </div>
+    </section>
+
+    <!-- Jogar: nome + seleção de modo -->
+    <section id="screen-play" class="screen">
+      <div class="panel">
+        <h2>▶ Jogar</h2>
+        <label class="field-label" for="player-name">O teu nome</label>
+        <input id="player-name" class="input" type="text" maxlength="14" placeholder="Ex.: KingKong" autocomplete="off">
+
+        <label class="field-label">Modo de jogo</label>
+        <div id="mode-list" class="mode-list">
+          <button class="mode-card selected" data-mode="normal">
+            <span class="mode-icon">🤖</span>
+            <strong>Modo Normal</strong>
+            <small>Todos são gorilas. Um Bot Assassino persegue-vos: sobrevive até o tempo acabar.</small>
+          </button>
+          <button class="mode-card" data-mode="assassin">
+            <span class="mode-icon">🗡️</span>
+            <strong>Modo Assassino</strong>
+            <small>O servidor escolhe 1 jogador como Assassino (aura vermelha). Mínimo 2 jogadores.</small>
+          </button>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn" data-goto="screen-main">← Voltar</button>
+          <button class="btn primary" id="play-next">Continuar →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Salas -->
+    <section id="screen-rooms" class="screen">
+      <div class="panel wide">
+        <h2>🚪 Salas</h2>
+        <p class="hint-text" id="rooms-mode-note"></p>
+
+        <div class="tabs">
+          <button class="tab active" data-tab="tab-create">Criar sala</button>
+          <button class="tab" data-tab="tab-browse">Procurar sala</button>
+          <button class="tab" data-tab="tab-code">Código da sala</button>
+        </div>
+
+        <div id="tab-create" class="tab-panel active">
+          <label class="field-label" for="room-name">Nome da sala (opcional)</label>
+          <input id="room-name" class="input" type="text" maxlength="24" placeholder="Ex.: Selva dos Amigos" autocomplete="off">
+          <label class="check">
+            <input type="checkbox" id="room-private"> Sala privada (só entra quem tiver o código)
+          </label>
+          <button class="btn primary rooms-action" id="btn-create-room">Criar sala e entrar</button>
+        </div>
+
+        <div id="tab-browse" class="tab-panel">
+          <button class="btn small rooms-action" id="btn-refresh">↻ Atualizar lista</button>
+          <ul id="room-list" class="room-list"></ul>
+        </div>
+
+        <div id="tab-code" class="tab-panel">
+          <label class="field-label" for="code-input">Código da sala (3 a 8 letras/números)</label>
+          <input id="code-input" class="input code" type="text" maxlength="8" placeholder="EX.: BANANA" autocomplete="off">
+          <div class="btn-row left">
+            <button class="btn primary rooms-action" id="btn-join-code">Entrar com este código</button>
+            <button class="btn rooms-action" id="btn-create-code">Criar sala com este código</button>
+          </div>
+        </div>
+
+        <p id="rooms-error" class="error hidden"></p>
+        <div class="btn-row"><button class="btn" data-goto="screen-play">← Voltar</button></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= HUD ================= -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div class="hud-chip" id="hud-room" title="Clica para copiar o código">Sala</div>
+      <div class="hud-chip" id="hud-mode">Modo</div>
+      <div class="hud-chip big" id="hud-timer">--:--</div>
+    </div>
+    <div id="hud-banner" class="info"></div>
+    <div id="hud-players">
+      <h3>Jogadores</h3>
+      <ul id="player-list"></ul>
+    </div>
+    <div id="hud-feed"></div>
+    <div id="hud-hint">Rato: apontar · Clique: impulso / tocar · WASD + Espaço · E: tocar · Esc: menu</div>
+  </div>
+
+  <!-- Menu de pausa -->
+  <div id="pause" class="hidden">
+    <div class="panel center">
+      <h2>Menu da partida</h2>
+      <p class="hint-text">O jogo continua para os outros jogadores.</p>
+      <div class="btn-col">
+        <button class="btn primary" id="btn-resume">Continuar</button>
+        <button class="btn danger" id="btn-leave">Sair da sala</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <!-- Socket.io é servido automaticamente pelo servidor -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="network.js"></script>
+  <script src="game.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
